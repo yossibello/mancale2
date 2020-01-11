@@ -1,8 +1,8 @@
 #include "board.h"
 #include <iomanip>
 
-__int8 _pockets_move_cache[num_of_pockets * num_of_pockets * max_num_of_balls_in_pot]; // easly fit in L1 cache
-__int8 _pockets_last_pos_cache[num_of_pockets * max_num_of_balls_in_pot]; // easly fit in L1 cache
+char _pockets_move_cache[num_of_pockets * num_of_pockets * max_num_of_balls_in_pot]; // easly fit in L1 cache
+char _pockets_last_pos_cache[num_of_pockets * max_num_of_balls_in_pot]; // easly fit in L1 cache
 
 void board::reset()
 {
@@ -10,15 +10,15 @@ void board::reset()
 	//memcpy((void*)_pockets, (void*)_pockets_test1, num_of_pockets);
 }
 
-bool board::move(__int8 pos, board &bout)
+bool board::move(char pos, board &bout)
 {
-	__int8 n = _pockets[pos];
+	char n = _pockets[pos];
 
 	if (n == 0)
 		return false;
 
 	
-	__int8 pos_save = pos;
+	char pos_save = pos;
 	bool side  =pos < 6;
 	bool new_side = side;
 
@@ -28,9 +28,9 @@ bool board::move(__int8 pos, board &bout)
 	while ((n > 0 && first_round || n>1) && side == new_side && pos != 13 && pos != 6)
 	{
 
-		__int16 next_move = (n * num_of_pockets + pos * num_of_pockets * max_num_of_balls_in_pot); // take move from cache
-		__int16 last_pot_move = (n + pos * max_num_of_balls_in_pot); // take move from cache
-		__int8* pCache = &_pockets_move_cache[next_move];
+		short next_move = (n * num_of_pockets + pos * num_of_pockets * max_num_of_balls_in_pot); // take move from cache
+		short last_pot_move = (n + pos * max_num_of_balls_in_pot); // take move from cache
+		char* pCache = &_pockets_move_cache[next_move];
 			
 		for (int i = 0; i < num_of_pockets; ++i)
 			bout._pockets[i] = pCache[i] + bout._pockets[i];
@@ -47,7 +47,7 @@ bool board::move(__int8 pos, board &bout)
 
 	if (n == 1 && new_side == side && pos != 13 && pos != 6)
 	{
-		__int8 take_balls = 12 - pos;
+		char take_balls = 12 - pos;
 		bout._pockets[side?6:13] += bout._pockets[take_balls] + 1;
 		bout._pockets[take_balls] = 0;
 		bout._pockets[pos] = 0;
@@ -66,20 +66,20 @@ bool board::move(__int8 pos, board &bout)
 }
 void board::prepare_cache()
 {
-	for (__int8 pos = 0; pos < 13; pos++)
+	for (char pos = 0; pos < 13; pos++)
 	{
 
 		if (pos == 6)
 			continue;
 
-		for (__int8 n = 0; n < max_num_of_balls_in_pot; n++) // n is how manny balls in the pot we want to move
+		for (char n = 0; n < max_num_of_balls_in_pot; n++) // n is how manny balls in the pot we want to move
 		{
 			// fill one move
 
-			__int8 d = n / (num_of_pockets - 1);
-			__int8 r = n % (num_of_pockets - 1);
-			__int16 next_move = (n * num_of_pockets + pos * num_of_pockets * max_num_of_balls_in_pot);
-			__int16 move_end = (n  + pos * max_num_of_balls_in_pot);
+			char d = n / (num_of_pockets - 1);
+			char r = n % (num_of_pockets - 1);
+			short next_move = (n * num_of_pockets + pos * num_of_pockets * max_num_of_balls_in_pot);
+			short move_end = (n  + pos * max_num_of_balls_in_pot);
 			_pockets_move_cache[next_move + pos] = d - n;
 			int dr = r;
 
@@ -87,7 +87,7 @@ void board::prepare_cache()
 				_pockets_last_pos_cache[move_end] = pos;
 			for (int i = 1; i < num_of_pockets; i++)
 			{
-				__int8 cyclic = ((i + pos) % (num_of_pockets));
+				char cyclic = ((i + pos) % (num_of_pockets));
 
 				if (cyclic == 6 && pos > 6)
 					_pockets_move_cache[next_move + 6] = 0;
@@ -113,15 +113,15 @@ void board::prepare_cache()
 void board::validate_cache()
 {
 	std::ofstream f("log_cache.txt");
-	for (__int8 pos = 0; pos < 13; pos++)
+	for (char pos = 0; pos < 13; pos++)
 	{
 		if (pos == 6)
 			continue;
-		for (__int8 n = 0; n < max_num_of_balls_in_pot; n++) // n is how manny balls in the pot we want to move
+		for (char n = 0; n < max_num_of_balls_in_pot; n++) // n is how manny balls in the pot we want to move
 		{
 			// fill one move
-			__int16 next_move = (n * num_of_pockets + pos * num_of_pockets * max_num_of_balls_in_pot);
-			__int16 last_move = (n + pos * max_num_of_balls_in_pot);
+			short next_move = (n * num_of_pockets + pos * num_of_pockets * max_num_of_balls_in_pot);
+			short last_move = (n + pos * max_num_of_balls_in_pot);
 
 			for (size_t i = 0; i < num_of_pockets; i++)
 				f << (int)_pockets_move_cache[next_move + i] << ',';
